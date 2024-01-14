@@ -1,10 +1,11 @@
 module HelperMode where
 
 import WordUtils hiding (filterWords)
-import Data.Map hiding (foldl, map, filter)
-import Data.List (intersect, find)
+import Data.Map hiding (foldl, foldr, map, filter, (\\), null)
+import Data.List (intersect, find, (\\), nub)
 import qualified Data.Map as Map
 import Prelude
+import Control.Monad (filterM)
 
 type CharMap = Map GuessType [(Char, Int)]
 
@@ -19,54 +20,51 @@ filterWords guessList = filter validateWord
         validateWord word = foldl checkContains True guessList
             where
                 checkContains acc (tp, ch, idx)
-                    | tp == Green = word!!idx == ch && acc
-                    | tp == Yellow = ch `elem` word && acc
-                    | tp == Gray = ch `notElem` withNoGreens && acc
+                    | tp == Green = word !! idx == ch && acc
+                    | tp == Yellow = ch `elem` word && word !! idx /= ch && acc
+                    | tp == Gray = ch `notElem` withNoGY && acc
                     | otherwise = acc
 
-                withNoGreens = foldl 
-                    (\acc (ch, idx) -> if (Green, ch, idx) `notElem` guessList then ch : acc else acc) 
+                withNoGY = foldr
+                    (\(ch, idx) acc -> if (Green, ch, idx) `notElem` guessList 
+                        && (Prelude.null $ filter (\(tpe, char, _) -> tpe == Yellow && char == ch) guessList) then ch : acc else acc) 
                     [] $ zip word [0..]
-
-checkForContradictions :: CharMap -> [(GuessType, Char, Int)] -> Bool
-checkForContradictions guessMap = foldl charCheck False
+        
+mostEffectiveWords :: [String] -> [String]
+mostEffectiveWords words = filter 
+    (\word -> length (nub word) == maxLen && countVolwels (nub word) == maxVowels) 
+    words
     where
-        charCheck acc (tp, ch, idx)
-            | tp == Gray = ((ch, idx) `elem` yellows || (ch, idx) `elem` greens) || acc
-            | tp == Green = findGreenIndex idx ch || acc
-            | tp == Yellow = ((ch `elem` map fst grays && ch `notElem` map fst greens) || (ch, idx) `elem` greens) || acc
-            | otherwise = acc
+        maxLen = maximum $ map (length . nub) words
+        maxVowels = maximum $ map (countVolwels . nub) words
 
-        findGreenIndex idx ch = case find (\(c, id) -> id == idx && c /= ch) greens of
-            Just _ -> True
-            Nothing -> False
+        countVolwels :: String -> Int
+        countVolwels = length . filter (`elem` "aeiou")
 
-        grays = Map.findWithDefault [] Gray guessMap
-        yellows = Map.findWithDefault [] Yellow guessMap
-        greens = Map.findWithDefault [] Green guessMap
+helperMode :: Int -> CharMap -> [String] -> IO ()
+helperMode tries guessMap words = do
+    if tries == 0 then
+        print "I lost"
+    else 
+        if null words then do
+            print "There was a contradiction with your answers, try again"
+        else do
+            putStrLn $ show tries ++ " tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)"
+            guess <- randomElement $ mostEffectiveWords words
+            print $ "My guess is: " ++ guess
+
+            line <- getLine
+            let eval = map read (Prelude.words line) :: [GuessType]
+
+            let curr = zip3 eval guess [0..]
 
 
-helperMode :: CharMap -> [String] -> IO ()
-helperMode guessMap words = do
-    print "Enter space-separated list of Colors. (Gray, Yellow, Green)"
-    let guess = head words
-    print $ "My guess is: " ++ guess
+            if foldl (\acc x -> acc && x == Green) True eval 
+                then print "I win"
+                else helperMode (tries - 1) (updateCharMap guessMap curr) $ filterWords (zip3 eval guess [0..]) words
 
-    line <- getLine
-    let eval = map read (Prelude.words line) :: [GuessType]
 
-    let curr = zip3 eval guess [0..]
-
-    let check = checkForContradictions guessMap curr
-
-    if check then do
-        print "There was a contradiction with your answers, try again"
-        helperMode guessMap words
-    else do
-        if foldl (\acc x -> acc && x == Green) True eval 
-            then print "I win"
-            else helperMode (updateCharMap guessMap curr) $ filterWords (zip3 eval guess [0..]) words
-
-startHelperMode :: [String] -> IO ()
-startHelperMode words = do
-    helperMode (Map.fromList [(Green, []), (Yellow, []), (Gray, [])]) words 
+startHelperMode :: String -> Int -> [String] -> IO ()
+startHelperMode word tries words = do
+    print $ "The word is: " ++ word
+    helperMode tries (Map.fromList [(Green, []), (Yellow, []), (Gray, [])]) words 

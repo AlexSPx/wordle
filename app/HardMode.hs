@@ -20,15 +20,15 @@ makeLie guessMap word = do
         greens = Map.findWithDefault [] Green guessMap
  
         lieCheck (ch, idx)
-            | ch `elem` map fst grays = return Gray
-            | ch `elem` map fst yellows =
-                if (ch, idx) `elem` yellows
-                    then return Yellow
-                    else randomElement $ [Green, Yellow] `intersect` alls
             | ch `elem` map fst greens =
                 if (ch, idx) `elem` greens
                     then return Green
                     else return Yellow
+            | ch `elem` map fst yellows =
+                if (ch, idx) `elem` yellows
+                    then return Yellow
+                    else randomElement $ [Green, Yellow] `intersect` alls
+            | ch `elem` map fst grays = return Gray
             | otherwise = do
                 randomElement $ [Gray, Yellow, Green] `intersect` alls
             where
@@ -52,10 +52,11 @@ hardMode charMap word tries lied = do
                         then do
                             eval <- makeLie charMap guess
                             
+                            print eval
                             putStrLn $ printEval eval
                             putStrLn "LEID"
 
-                            hardMode (updateCharMap charMap $ zip3 eval guess [0..]) word (tries - 1) True
+                            hardMode charMap word (tries - 1) True
                         else do
                             let eval = evalWord word guess
                             

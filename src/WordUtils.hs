@@ -10,9 +10,6 @@ import Data.IORef
 filterWords :: Int -> [String] -> [String]
 filterWords len words = [map toLower word | word <- words, length word == len]
 
-drawInt :: Int -> Int -> IO Int
-drawInt x y = getStdRandom (randomR (x,y))
-
 loadWords :: Int -> IO [String]
 loadWords n = do
     contents <- readFile "data/words.txt"

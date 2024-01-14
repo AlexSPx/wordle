@@ -17,11 +17,11 @@ removeFromList :: (Ord k, Eq a) => k -> a -> Map.Map k [a] -> Map.Map k [a]
 removeFromList key toRemove = Map.adjust (filter (/= toRemove)) key
 
 checkWord :: Map.Map GuessType [(Char, Int)] -> String -> Map.Map GuessType [(Char, Int)]
-checkWord warns word = Prelude.foldl checkChar initialMap $ zip word [0..]
+checkWord guessMap word = Prelude.foldl checkChar initialMap $ zip word [0..]
     where
         initialMap = Map.fromList [
-            (Green, Map.findWithDefault [] Green warns), 
-            (Yellow, Map.findWithDefault [] Yellow warns ++ Map.findWithDefault [] Green warns), 
+            (Green, Map.findWithDefault [] Green guessMap), 
+            (Yellow, Map.findWithDefault [] Yellow guessMap ++ Map.findWithDefault [] Green guessMap), 
             (Gray, [])]
 
         checkChar acc r@(ch, idx)
@@ -29,12 +29,12 @@ checkWord warns word = Prelude.foldl checkChar initialMap $ zip word [0..]
             | otherwise = removeFromList Green r $ removeFromListChar Yellow ch acc
             
             where
-                lookIn idx ch = case Map.lookup idx warns of
+                lookIn idx ch = case Map.lookup idx guessMap of
                     Just list   -> find (\(x,_) -> x == ch) list
                     Nothing     -> Nothing
                 isGray ch = isJust $ lookIn Gray ch
 
-                isGreen tuple = case Map.lookup Green warns of
+                isGreen tuple = case Map.lookup Green guessMap of
                     Just list   -> isJust $ find (\(x,_) -> x == ch) list
                     Nothing     -> False 
                 
@@ -61,8 +61,8 @@ updateGuessMap = foldl updateList
                 Just list -> if val `elem` list then acc else insertIntoList key val acc
                 Nothing -> acc
 
-easyMode :: Map.Map GuessType [(Char, Int)] -> String -> Int -> IO ()
-easyMode guessMap word tries = do
+easyMode :: Map.Map GuessType [(Char, Int)] -> [String] -> String -> Int -> IO ()
+easyMode guessMap words word tries = do
     if tries == 0 then 
         putStrLn "You lost"
     else do
@@ -70,16 +70,16 @@ easyMode guessMap word tries = do
         guess <- getLine
 
         case guess of
-                _ | word == guess -> putStrLn $ map (const '🟩') [1..wordLength]
+                _ | word == guess -> putStrLn $ map (const '🟩') [1..wordLength] 
                 _ -> do
                     let eval = evalWord word guess
                     putStrLn $ printEval eval
                         
                     showWarings $ checkWord guessMap guess
 
-                    easyMode (updateGuessMap guessMap $ zip eval $ zip guess [0..]) word (tries - 1)
+                    easyMode (updateGuessMap guessMap $ zip eval $ zip guess [0..]) words word (tries - 1)
             where
                 wordLength = length word
 
-startEasyGame :: String -> Int -> IO ()
+startEasyGame :: [String] -> String -> Int -> IO ()
 startEasyGame = easyMode (Map.fromList [(Green, []), (Yellow, []), (Gray, [])])
