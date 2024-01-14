@@ -44,7 +44,7 @@
   -- всяка зелена буква си е на мястото
   -- всяка жълта буква се съдържа в думата и е на различна позиция.
   -- всяка сива буква не се съдържа в думата.
-  `mostEffectiveWords` - От списък с дими намира тези които съдържат най-много различни букви, както и най-много различни гласни букви.
+  `mostEffectiveWords` - От списък с дими намира тази дума, която елиминира най-много други.
 
 - `data/words.txt` - използван речник https://github.com/dwyl/english-words
 
@@ -131,21 +131,15 @@ oflem
 ### Helper Game (3)
 
 ```
-"The word is: moham"
+"The word is: sofas"
 6 tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)
-"My guess is: louie"
-Gray Green Gray Gray Gray
+"My guess is: oates"
+Yellow Yellow Gray Gray Green
 5 tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)
-"My guess is: morat"
-Green Green Gray Green Gray
+"My guess is: loans"
+Gray Green Yellow Gray Green
 4 tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)
-"My guess is: moxas"
-Green Green Gray Green Gray
-3 tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)
-"My guess is: mopan"
-Green Green Gray Green Gray
-2 tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)
-"My guess is: moham"
+"My guess is: sofas"
 Green Green Green Green Green
 "I win"
 ```

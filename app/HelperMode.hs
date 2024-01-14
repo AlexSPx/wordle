@@ -30,16 +30,18 @@ filterWords guessList = filter validateWord
                         && (Prelude.null $ filter (\(tpe, char, _) -> tpe == Yellow && char == ch) guessList) then ch : acc else acc) 
                     [] $ zip word [0..]
         
-mostEffectiveWords :: [String] -> [String]
-mostEffectiveWords words = filter 
-    (\word -> length (nub word) == maxLen && countVolwels (nub word) == maxVowels) 
-    words
+mostEffectiveWords :: [String] -> String
+mostEffectiveWords words = snd (foldl maxElims (0, "") words)
     where
-        maxLen = maximum $ map (length . nub) words
-        maxVowels = maximum $ map (countVolwels . nub) words
+        maxElims :: (Int, String) -> String -> (Int, String)
+        maxElims acc x = if count > fst acc then (count, x) else acc
+            where 
+                count = countEliminations x
 
-        countVolwels :: String -> Int
-        countVolwels = length . filter (`elem` "aeiou")
+        countEliminations word = foldl (\acc curr -> if containsChar curr word then acc + 1 else acc) 0 words
+
+        containsChar [] word = False
+        containsChar (ch:rest) word = ch `elem` word || containsChar rest word
 
 helperMode :: Int -> CharMap -> [String] -> IO ()
 helperMode tries guessMap words = do
@@ -50,7 +52,7 @@ helperMode tries guessMap words = do
             print "There was a contradiction with your answers, try again"
         else do
             putStrLn $ show tries ++ " tries left. Enter space-separated list of Colors. (Gray, Yellow, Green)"
-            guess <- randomElement $ mostEffectiveWords words
+            let guess = mostEffectiveWords words
             print $ "My guess is: " ++ guess
 
             line <- getLine
