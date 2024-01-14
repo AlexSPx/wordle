@@ -46,7 +46,7 @@
   -- всяка сива буква не се съдържа в думата.
   `mostEffectiveWords` - От списък с дими намира тази дума, която елиминира най-много други.
 
-- `data/words.txt` - използван речник https://github.com/dwyl/english-words
+- `data/words.txt` - използван речник https://github.com/first20hours/google-10000-english/blob/master/google-10000-english-no-swears.txt
 
 ## Инструкции
 
